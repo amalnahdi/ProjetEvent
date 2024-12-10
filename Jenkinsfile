@@ -8,7 +8,6 @@ pipeline {
         RELEASE_VERSION = "1.0"
         registry = "farahdiouani/gestion-station-ski"
         registryCredential = 'docker-hub-credentials'
-        IMAGE_TAG = "${RELEASE_VERSION}-${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -16,7 +15,7 @@ pipeline {
             steps {
                 echo 'Checking out code...'
                 git branch: 'AmalNahdi',
-                url: 'https://github.com/amalnahdi/ProjetEvent.git'
+                    url: 'https://github.com/amalnahdi/ProjetEvent.git'
                 echo 'Checkout completed.'
             }
         }
@@ -29,12 +28,9 @@ pipeline {
             }
         }
 
-
-
-
         stage('Build') {
             steps {
-                echo 'Building Stage...'
+                echo 'Building the project...'
                 sh 'mvn install -Dmaven.test.skip=true'
                 echo 'Build completed.'
             }
@@ -44,7 +40,6 @@ pipeline {
             steps {
                 echo 'Starting SonarQube Analysis...'
                 withSonarQubeEnv(SONARQUBE_ENV) {
-                    echo 'Running SonarQube analysis...'
                     sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
                 }
                 echo 'SonarQube analysis completed.'
@@ -55,10 +50,10 @@ pipeline {
     post {
         success {
             echo 'Build finished successfully!'
-
         }
         failure {
             echo 'Build failed!'
         }
+
     }
 }
