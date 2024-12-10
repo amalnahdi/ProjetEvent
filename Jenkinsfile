@@ -27,13 +27,15 @@ pipeline {
                 echo 'Clean completed.'
             }
         }
-stage('Compile') {
-    steps {
-        echo 'Compiling the code...'
-        sh 'mvn compile'
-        echo 'Compilation completed.'
-    }
-}
+
+        stage('Compile') {
+            steps {
+                echo 'Compiling the code...'
+                sh 'mvn compile'
+                echo 'Compilation completed.'
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 echo 'Starting SonarQube Analysis...'
@@ -61,67 +63,67 @@ stage('Compile') {
         }
 
         stage('Deploy to Nexus') {
-                    steps {
-                        echo 'Deploying to Nexus...'
-                        sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
-                        echo 'Deployment to Nexus completed.'
+            steps {
+                echo 'Deploying to Nexus...'
+                sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
+                echo 'Deployment to Nexus completed.'
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                echo 'Building Docker Image...'
+                script {
+                    dockerImage = docker.build("${registry}:${IMAGE_TAG}")
+                    echo "Docker image built: ${dockerImage.imageName()}"
+                }
+                echo 'Docker Build Image stage completed.'
+            }
+        }
+
+        stage('Login to Docker') {
+            steps {
+                echo 'Logging into DockerHub...'
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
+                        echo 'DockerHub login successful.'
                     }
                 }
+                echo 'Login to DockerHub stage completed.'
+            }
+        }
 
-         stage('Build Image') {
-                     steps {
-                         echo 'Building Docker Image...'
-                         script {
-                             dockerImage = docker.build("${registry}:${IMAGE_TAG}")
-                             echo "Docker image built: ${dockerImage.imageName()}"
-                         }
-                         echo 'Docker Build Image stage completed.'
-                     }
-                 }
+        stage('Push to DockerHub') {
+            steps {
+                echo 'Pushing to DockerHub...'
+                script {
+                    sh "docker push ${registry}:${IMAGE_TAG}"
+                    echo "Docker image pushed: ${registry}:${IMAGE_TAG}"
+                }
+                echo 'Push to DockerHub stage completed.'
+            }
+        }
 
-                 stage('Login to Docker') {
-                     steps {
-                         echo 'Logging to DockerHub...'
-                         script {
-                             withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                 sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
-                                 echo 'DockerHub login successful.'
-                             }
-                         }
-                         echo 'Login to DockerHub stage completed.'
-                     }
-                 }
+        stage('Deploy with Docker Compose') {
+            steps {
+                echo 'Docker Compose Deployment...'
+                script {
+                    echo 'Stopping existing containers...'
+                    sh 'docker compose down || true'
 
-                 stage('Push to DockerHub') {
-                     steps {
-                         echo 'Pushing to DockerHub...'
-                         script {
-                             sh "docker push ${dockerImage.imageName()}"
-                             echo "Docker image pushed: ${dockerImage.imageName()}"
-                         }
-                         echo 'Push to DockerHub stage completed.'
-                     }
-                 }
+                    echo 'Starting containers...'
+                    sh 'docker compose up -d'
 
-                 stage('Deploy with Docker Compose') {
-                     steps {
-                         echo 'Docker Compose Deployment...'
-                         script {
-                             echo 'Stopping existing containers...'
-                             sh 'docker compose down || true'
+                    echo 'Waiting for services to initialize...'
+                    sh 'sleep 30'
 
-                             echo 'Starting containers...'
-                             sh 'docker compose up -d'
-
-                             echo 'Waiting for services to initialize...'
-                             sh 'sleep 30'
-
-                             echo 'Verifying deployment status...'
-                             sh 'docker compose ps'
-                         }
-                         echo 'Deploy with Docker Compose stage completed.'
-                     }
-                 }
+                    echo 'Verifying deployment status...'
+                    sh 'docker compose ps'
+                }
+                echo 'Deploy with Docker Compose stage completed.'
+            }
+        }
     }
 
     post {
