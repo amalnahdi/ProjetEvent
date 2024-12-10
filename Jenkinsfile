@@ -1,30 +1,64 @@
 pipeline {
     agent any
+    environment {
+        SONARQUBE_ENV = 'SonarQube'  // SonarQube environment name
+        NEXUS_CREDENTIALS_ID = 'deploymentRepo'  // Nexus credentials ID in Jenkins
+        DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
+        RELEASE_VERSION = "1.0"
+        registry = "farahdiouani/gestion-station-ski"
+        registryCredential = 'docker-hub-credentials'
+    }
+
     stages {
-            stage('Checkout') {
-                steps {
-                    git branch: 'AmalNahdi',
-                    url: 'https://github.com/amalnahdi/ProjetEvent.git';
-                }
+        stage('Checkout') {
+            steps {
+                git branch: 'AmalNahdi',
+                url: 'https://github.com/amalnahdi/ProjetEvent.git'
             }
-             stage('Build') {
-                  steps {
-                      sh 'mvn install -Dmaven.test.skip=true'
-                  }
-             }
+        }
 
+        stage('Clean') {
+            steps {
+                echo 'Cleaning the workspace...'
+                sh 'mvn clean'
+                echo 'Clean completed.'
+            }
+        }
 
+        stage('Package') {
+            steps {
+                echo 'Packaging Stage...'
+                sh 'mvn package'
+                echo 'Package completed.'
+            }
+        }
 
-                 }
+        stage('Build') {
+            steps {
+                echo 'Building Stage...'
+                sh 'mvn install -Dmaven.test.skip=true'
+                echo 'Build completed.'
+            }
+        }
 
-                 post {
-                     success {
-                         echo 'Build finished successfully!'
-                     }
-                     failure {
-                         echo 'Build failed!'
-                     }
-                 }
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Starting SonarQube Analysis...'
+                withSonarQubeEnv(SONARQUBE_ENV) {
+                    echo 'Running SonarQube analysis...'
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
+                }
+                echo 'SonarQube analysis completed.'
+            }
+        }
+    }
 
-
+    post {
+        success {
+            echo 'Build finished successfully!'
+        }
+        failure {
+            echo 'Build failed!'
+        }
+    }
 }
