@@ -16,24 +16,48 @@ pipeline {
                     url: 'https://github.com/amalnahdi/ProjetEvent.git';
                 }
             }
-             stage('Build') {
-                  steps {
-                      sh 'mvn install -Dmaven.test.skip=true'
-                  }
-             }
-stage('SonarQube Analysis') {
-            steps {
-                echo 'Starting SonarQube Analysis...'
-                withSonarQubeEnv(SONARQUBE_ENV) {
-                    echo 'Running SonarQube analysis...'
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
-                }
-                echo 'SonarQube analysis completed.'
-            }
+
+
+             stage('Clean') {
+                         steps {
+                             echo 'Cleaning the workspace...'
+                             sh 'mvn clean'
+                             echo 'Clean completed.'
+                         }
+                     }
 
 
 
-                 }
+                     stage('Package') {
+                         steps {
+                             echo 'Packaging Stage...'
+                             sh 'mvn package'
+                             echo 'Package completed.'
+                         }
+                     }
+
+                     stage('Build') {
+                         steps {
+                             echo 'Building Stage...'
+                             sh 'mvn install -Dmaven.test.skip=true'
+                             echo 'Build completed.'
+                         }
+                     }
+
+                     stage('SonarQube Analysis') {
+                         steps {
+                             echo 'Starting SonarQube Analysis...'
+                             withSonarQubeEnv(SONARQUBE_ENV) {
+                                 echo 'Running SonarQube analysis...'
+                                 sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
+                             }
+                             echo 'SonarQube analysis completed.'
+                         }
+                     }
+
+
+
+              }
 
                  post {
                      success {
