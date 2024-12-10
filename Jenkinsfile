@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         SONARQUBE_ENV = 'SonarQube'  // SonarQube environment name
+        NEXUS_CREDENTIALS_ID = 'deploymentRepo'  // Nexus credentials ID in Jenkins
     }
 
     stages {
@@ -53,6 +54,14 @@ stage('Compile') {
                 echo 'Build completed.'
             }
         }
+
+        stage('Deploy to Nexus') {
+                    steps {
+                        echo 'Deploying to Nexus...'
+                        sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
+                        echo 'Deployment to Nexus completed.'
+                    }
+                }
     }
 
     post {

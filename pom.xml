@@ -13,6 +13,12 @@
     <version>1.0.0-SNAPSHOT</version>
     <name>eventsProject</name>
     <description>eventsProject</description>
+    <distributionManagement>
+        <repository>
+            <id>deploymentRepo</id>
+            <url>http://192.168.33.10:8081/repository/AmalNahdi5sae1//</url>
+        </repository>
+    </distributionManagement>
     <scm>
         <connection>scm:svn:http://somerepository.com/svn_repo/trunk</connection>
         <developerConnection>scm:svn:https://somerepository.com/svn_repo/trunk</developerConnection>
