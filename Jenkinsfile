@@ -25,13 +25,7 @@ pipeline {
             }
         }
 
-        stage('Package') {
-            steps {
-                echo 'Packaging Stage...'
-                sh 'mvn package'
-                echo 'Package completed.'
-            }
-        }
+
 
         stage('Build') {
             steps {
