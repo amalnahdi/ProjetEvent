@@ -74,8 +74,9 @@ pipeline {
             steps {
                 echo 'Building Docker Image...'
                 script {
-                    dockerImage = docker.build("${registry}:${IMAGE_TAG}")
-                    echo "Docker image built: ${dockerImage.imageName()}"
+                    def dockerImage = docker.build("${registry}:${IMAGE_TAG}")
+                    env.BUILT_IMAGE = dockerImage.imageName()
+                    echo "Docker image built: ${env.BUILT_IMAGE}"
                 }
                 echo 'Docker Build Image stage completed.'
             }
@@ -85,7 +86,7 @@ pipeline {
             steps {
                 echo 'Logging into DockerHub...'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: registryCredential, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
                         echo 'DockerHub login successful.'
                     }
@@ -98,8 +99,8 @@ pipeline {
             steps {
                 echo 'Pushing to DockerHub...'
                 script {
-                    sh "docker push ${registry}:${IMAGE_TAG}"
-                    echo "Docker image pushed: ${registry}:${IMAGE_TAG}"
+                    sh "docker push ${env.BUILT_IMAGE}"
+                    echo "Docker image pushed: ${env.BUILT_IMAGE}"
                 }
                 echo 'Push to DockerHub stage completed.'
             }
