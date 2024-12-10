@@ -21,7 +21,13 @@ pipeline {
                 echo 'Clean completed.'
             }
         }
-
+stage('Compile') {
+    steps {
+        echo 'Compiling the code...'
+        sh 'mvn compile'
+        echo 'Compilation completed.'
+    }
+}
         stage('SonarQube Analysis') {
             steps {
                 echo 'Starting SonarQube Analysis...'
