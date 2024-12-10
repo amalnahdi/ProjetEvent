@@ -3,6 +3,11 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'SonarQube'  // SonarQube environment name
         NEXUS_CREDENTIALS_ID = 'deploymentRepo'  // Nexus credentials ID in Jenkins
+        DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
+        RELEASE_VERSION = "1.0"
+        registry = "amalnahdii/events-project"
+        registryCredential = 'docker-hub-credentials'
+        IMAGE_TAG = "${RELEASE_VERSION}-${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -62,6 +67,61 @@ stage('Compile') {
                         echo 'Deployment to Nexus completed.'
                     }
                 }
+
+         stage('Build Image') {
+                     steps {
+                         echo 'Building Docker Image...'
+                         script {
+                             dockerImage = docker.build("${registry}:${IMAGE_TAG}")
+                             echo "Docker image built: ${dockerImage.imageName()}"
+                         }
+                         echo 'Docker Build Image stage completed.'
+                     }
+                 }
+
+                 stage('Login to Docker') {
+                     steps {
+                         echo 'Logging to DockerHub...'
+                         script {
+                             withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                                 sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
+                                 echo 'DockerHub login successful.'
+                             }
+                         }
+                         echo 'Login to DockerHub stage completed.'
+                     }
+                 }
+
+                 stage('Push to DockerHub') {
+                     steps {
+                         echo 'Pushing to DockerHub...'
+                         script {
+                             sh "docker push ${dockerImage.imageName()}"
+                             echo "Docker image pushed: ${dockerImage.imageName()}"
+                         }
+                         echo 'Push to DockerHub stage completed.'
+                     }
+                 }
+
+                 stage('Deploy with Docker Compose') {
+                     steps {
+                         echo 'Docker Compose Deployment...'
+                         script {
+                             echo 'Stopping existing containers...'
+                             sh 'docker compose down || true'
+
+                             echo 'Starting containers...'
+                             sh 'docker compose up -d'
+
+                             echo 'Waiting for services to initialize...'
+                             sh 'sleep 30'
+
+                             echo 'Verifying deployment status...'
+                             sh 'docker compose ps'
+                         }
+                         echo 'Deploy with Docker Compose stage completed.'
+                     }
+                 }
     }
 
     post {
