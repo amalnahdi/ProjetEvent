@@ -37,14 +37,14 @@ pipeline {
         }
 
         /* stage('SonarQube Analysis') {
-            steps {
-                echo 'Starting SonarQube Analysis...'
-                withSonarQubeEnv(SONARQUBE_ENV) {
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
-                }
-                echo 'SonarQube analysis completed.'
-            }
-        }*/
+                    steps {
+                        echo 'Starting SonarQube Analysis...'
+                        withSonarQubeEnv(SONARQUBE_ENV) {
+                            sh 'mvn sonar:sonar -Dsonar.projectKey=sonar'
+                        }
+                        echo 'SonarQube analysis completed.'
+                    }
+                }*/
 
         stage('Package') {
             steps {
@@ -62,23 +62,43 @@ pipeline {
             }
         }
 
-       // stage('Deploy to Nexus') {
-        //    steps {
-          //      echo 'Deploying to Nexus...'
-           //     sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
-            //    echo 'Deployment to Nexus completed.'
-           // }
-       // }
 
-       stage('Build Docker Image') {
-                   steps {
-                       echo 'Building Docker Image...'
-                       sh "docker build -t ${registry}:${IMAGE_TAG} ."
-                       echo "Docker image built: ${registry}:${IMAGE_TAG}"
-                   }
-               }
+          // stage('Deploy to Nexus') {
+                //    steps {
+                  //      echo 'Deploying to Nexus...'
+                   //     sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
+                    //    echo 'Deployment to Nexus completed.'
+                   // }
+               // }
 
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker Image...'
+                sh "docker build -t ${registry}:${IMAGE_TAG} ."
+                echo "Docker image built: ${registry}:${IMAGE_TAG}"
+            }
+        }
 
+        stage('Login to Docker') {
+            steps {
+                script {
+                    echo 'Logging into Docker Hub...'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                    }
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                script {
+                    echo 'Pushing Docker image to Docker Hub...'
+                    sh "docker push ${registry}:${IMAGE_TAG}"
+                    echo "Docker image pushed: ${registry}:${IMAGE_TAG}"
+                }
+            }
+        }
     }
 
     post {
