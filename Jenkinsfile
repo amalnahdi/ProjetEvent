@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        /* stage('SonarQube Analysis') {
             steps {
                 echo 'Starting SonarQube Analysis...'
                 withSonarQubeEnv(SONARQUBE_ENV) {
@@ -44,7 +44,7 @@ pipeline {
                 }
                 echo 'SonarQube analysis completed.'
             }
-        }
+        }*/
 
         stage('Package') {
             steps {
@@ -62,13 +62,13 @@ pipeline {
             }
         }
 
-        stage('Deploy to Nexus') {
-            steps {
-                echo 'Deploying to Nexus...'
-                sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
-                echo 'Deployment to Nexus completed.'
-            }
-        }
+       // stage('Deploy to Nexus') {
+        //    steps {
+          //      echo 'Deploying to Nexus...'
+           //     sh "mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://192.168.33.10:8081/repository/AmalNahdi5sae1/"
+            //    echo 'Deployment to Nexus completed.'
+           // }
+       // }
 
         stage('Build Image') {
             steps {
@@ -82,49 +82,7 @@ pipeline {
             }
         }
 
-        stage('Login to Docker') {
-            steps {
-                echo 'Logging into DockerHub...'
-                script {
-                    withCredentials([usernamePassword(credentialsId: registryCredential, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
-                        echo 'DockerHub login successful.'
-                    }
-                }
-                echo 'Login to DockerHub stage completed.'
-            }
-        }
 
-        stage('Push to DockerHub') {
-            steps {
-                echo 'Pushing to DockerHub...'
-                script {
-                    sh "docker push ${env.BUILT_IMAGE}"
-                    echo "Docker image pushed: ${env.BUILT_IMAGE}"
-                }
-                echo 'Push to DockerHub stage completed.'
-            }
-        }
-
-        stage('Deploy with Docker Compose') {
-            steps {
-                echo 'Docker Compose Deployment...'
-                script {
-                    echo 'Stopping existing containers...'
-                    sh 'docker compose down || true'
-
-                    echo 'Starting containers...'
-                    sh 'docker compose up -d'
-
-                    echo 'Waiting for services to initialize...'
-                    sh 'sleep 30'
-
-                    echo 'Verifying deployment status...'
-                    sh 'docker compose ps'
-                }
-                echo 'Deploy with Docker Compose stage completed.'
-            }
-        }
     }
 
     post {
