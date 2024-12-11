@@ -70,17 +70,13 @@ pipeline {
            // }
        // }
 
-        stage('Build Image') {
-            steps {
-                echo 'Building Docker Image...'
-                script {
-                    def dockerImage = docker.build("${registry}:${IMAGE_TAG}")
-                    env.BUILT_IMAGE = dockerImage.imageName()
-                    echo "Docker image built: ${env.BUILT_IMAGE}"
-                }
-                echo 'Docker Build Image stage completed.'
-            }
-        }
+       stage('Build Docker Image') {
+                   steps {
+                       echo 'Building Docker Image...'
+                       sh "docker build -t ${registry}:${IMAGE_TAG} ."
+                       echo "Docker image built: ${registry}:${IMAGE_TAG}"
+                   }
+               }
 
 
     }
