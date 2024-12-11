@@ -99,6 +99,29 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy with Docker Compose') {
+                    steps {
+                        script {
+                            echo 'Deploying with Docker Compose...'
+
+                            // Update docker-compose.yml to use the new image tag
+                            sh "sed -i 's|image: ${registry}:.*|image: ${registry}:${IMAGE_TAG}|' docker-compose.yml"
+
+                            // Stop existing containers if running
+                            sh 'docker compose down || true'
+
+                            // Start the services
+                            sh 'docker compose up -d'
+
+                            // Wait for services to initialize
+                            sh 'sleep 30'
+
+                            // Verify deployment status
+                            sh 'docker compose ps'
+                        }
+                    }
+                }
     }
 
     post {
